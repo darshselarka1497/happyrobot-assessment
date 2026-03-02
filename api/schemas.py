@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 # --- Loads ---
@@ -50,6 +50,15 @@ class NegotiateRequest(BaseModel):
     load_id: str
     carrier_offer: float
 
+    @field_validator("carrier_offer", mode="before")
+    @classmethod
+    def parse_carrier_offer(cls, v):
+        if isinstance(v, str):
+            # Strip dollar signs, commas, whitespace
+            v = v.replace("$", "").replace(",", "").strip()
+            return float(v)
+        return v
+
 
 class NegotiateResponse(BaseModel):
     session_id: str
@@ -75,6 +84,28 @@ class CallLogRequest(BaseModel):
     outcome: str = "call_dropped"
     sentiment: str = "neutral"
     notes: Optional[str] = None
+
+    @field_validator("loadboard_rate", "agreed_rate", mode="before")
+    @classmethod
+    def parse_rates(cls, v):
+        if v is None:
+            return v
+        if isinstance(v, str):
+            v = v.replace("$", "").replace(",", "").strip()
+            if not v:
+                return None
+            return float(v)
+        return v
+
+    @field_validator("negotiation_rounds", mode="before")
+    @classmethod
+    def parse_rounds(cls, v):
+        if isinstance(v, str):
+            v = v.strip()
+            if not v:
+                return 0
+            return int(v)
+        return v
 
 
 class CallLogOut(BaseModel):
