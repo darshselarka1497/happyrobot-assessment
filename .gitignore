@@ -7,3 +7,4 @@ data/carrier_sales.db
 *.pdf
 QuickStart.md
 settings.local.json
+docs/IMPLEMENTATION_GUIDE.md
