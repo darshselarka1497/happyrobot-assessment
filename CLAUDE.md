@@ -30,11 +30,17 @@ data/
   loads_seed.json  — 10 sample freight loads
 ```
 
+## Live Deployment
+- **Render URL**: https://happyrobot-assessment.onrender.com
+- **API docs**: https://happyrobot-assessment.onrender.com/docs
+- **Dashboard**: https://happyrobot-assessment.onrender.com/dashboard
+- **GitHub repo**: https://github.com/darshselarka1497/happyrobot-assessment
+
 ## Key Commands
 - **Run locally**: `source .venv/bin/activate && uvicorn api.main:app --reload --port 8000`
 - **Run with Docker**: `docker compose up --build`
-- **API docs**: http://localhost:8000/docs
-- **Dashboard**: http://localhost:8000/dashboard
+- **API docs (local)**: http://localhost:8000/docs
+- **Dashboard (local)**: http://localhost:8000/dashboard
 
 ## Conventions
 - Python 3.9 compatible — use `Optional[str]` not `str | None`, `List[X]` not `list[X]`, `Dict[K,V]` not `dict[k,v]`
