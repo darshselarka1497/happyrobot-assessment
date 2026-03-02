@@ -13,7 +13,7 @@ Backend API for HappyRobot inbound carrier sales automation. This service provid
 
 - **FMCSA Carrier Verification** — Validate MC numbers against the FMCSA database (with fallback when API is unavailable)
 - **Load Search** — Search available loads by origin, destination, equipment type, rate, and weight
-- **Negotiation Engine** — Stateful counter-offer logic with configurable floor price (90% of loadboard rate) and max 3 rounds
+- **Negotiation Engine** — Stateful counter-offer logic with ceiling price (110% of loadboard rate) and max 3 rounds
 - **Call Logging** — Record call outcomes, sentiment, agreed rates, and extracted data
 - **Metrics Dashboard** — Visual dashboard at `/dashboard` with KPIs, charts, and call history
 - **API Key Authentication** — All endpoints secured with `X-API-Key` header
@@ -99,8 +99,11 @@ docker compose up --build
 
 ## Negotiation Logic
 
-- Floor price: 90% of `loadboard_rate`
-- Carrier offer >= floor → **accept**, transfer to sales rep
-- Carrier offer < floor → **counter** with midpoint of (carrier offer + current ask)
-- Counter never goes below floor price
-- After 3 rounds → present final floor price as take-it-or-leave-it
+Carriers negotiate **up** (they want more than the loadboard rate). The broker negotiates **down**.
+
+- Ceiling price: **110%** of `loadboard_rate` (max the broker will pay)
+- Carrier offer ≤ loadboard rate → **accept immediately** (great deal for broker)
+- Carrier offer ≤ 103% of loadboard rate → **accept** (close enough)
+- Carrier offer within ceiling → **counter** with midpoint of (carrier offer + broker's current offer)
+- Counter never exceeds ceiling price
+- After 3 rounds → present ceiling as final take-it-or-leave-it offer

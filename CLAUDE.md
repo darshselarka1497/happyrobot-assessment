@@ -22,7 +22,7 @@ api/
   routes/
     fmcsa.py       — GET /api/fmcsa/verify/{mc_number}
     loads.py       — GET /api/loads/search, GET /api/loads/{load_id}
-    negotiate.py   — POST /api/negotiate (stateful, 3-round max, 90% floor)
+    negotiate.py   — POST /api/negotiate (stateful, 3-round max, 110% ceiling)
     calls.py       — POST/GET /api/calls/log, GET /api/calls/metrics
 dashboard/
   index.html       — Dark-themed metrics dashboard
@@ -49,11 +49,11 @@ data/
 - Environment variables loaded from `.env` file via pydantic-settings
 
 ## Negotiation Logic
-- Floor price = 90% of `loadboard_rate`
-- Carrier offer >= floor → accept, transfer to sales rep
-- Carrier offer < floor → counter with midpoint of (carrier_offer + current_offer)
-- Counter never goes below floor
-- Max 3 rounds, then present floor as final offer
+- Ceiling price = 110% of `loadboard_rate` (max broker will pay)
+- Carrier offer ≤ loadboard rate → accept immediately (great deal)
+- Carrier offer ≤ 103% of loadboard → accept (close enough)
+- Carrier offer within ceiling → counter with midpoint of (carrier_offer + current_offer), capped at ceiling
+- Max 3 rounds, then present ceiling as final take-it-or-leave-it
 
 ## Environment Variables
 - `FMCSA_API_KEY` — from https://mobile.fmcsa.dot.gov/QCDevsite/HomePage
