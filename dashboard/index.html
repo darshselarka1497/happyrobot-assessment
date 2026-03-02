@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carrier Sales Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f1117;
+            color: #e4e4e7;
+            min-height: 100vh;
+        }
+        header {
+            background: #18181b;
+            border-bottom: 1px solid #27272a;
+            padding: 20px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        header h1 {
+            font-size: 22px;
+            font-weight: 600;
+            color: #fff;
+        }
+        header .subtitle {
+            color: #71717a;
+            font-size: 13px;
+        }
+        .api-key-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .api-key-bar input {
+            background: #27272a;
+            border: 1px solid #3f3f46;
+            color: #e4e4e7;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            width: 220px;
+        }
+        .api-key-bar button {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .api-key-bar button:hover { background: #4f46e5; }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .kpi-card {
+            background: #18181b;
+            border: 1px solid #27272a;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .kpi-card .label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #71717a;
+            margin-bottom: 8px;
+        }
+        .kpi-card .value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #fff;
+        }
+        .kpi-card .value.green { color: #22c55e; }
+        .kpi-card .value.yellow { color: #eab308; }
+        .kpi-card .value.blue { color: #6366f1; }
+
+        /* Charts */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .chart-card {
+            background: #18181b;
+            border: 1px solid #27272a;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .chart-card h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #a1a1aa;
+        }
+
+        /* Call log table */
+        .table-card {
+            background: #18181b;
+            border: 1px solid #27272a;
+            border-radius: 12px;
+            padding: 20px;
+            overflow-x: auto;
+        }
+        .table-card h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #a1a1aa;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th {
+            text-align: left;
+            padding: 10px 12px;
+            color: #71717a;
+            font-weight: 500;
+            border-bottom: 1px solid #27272a;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.05em;
+        }
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #1e1e22;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-booked, .badge-transferred { background: #052e16; color: #22c55e; }
+        .badge-no_match { background: #1c1917; color: #a8a29e; }
+        .badge-price_rejected { background: #2a1215; color: #f87171; }
+        .badge-carrier_ineligible { background: #2a1215; color: #f87171; }
+        .badge-call_dropped { background: #1c1917; color: #a8a29e; }
+        .badge-positive { background: #052e16; color: #22c55e; }
+        .badge-neutral { background: #172554; color: #60a5fa; }
+        .badge-negative { background: #2a1215; color: #f87171; }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #71717a;
+        }
+        .empty-state h3 { font-size: 18px; margin-bottom: 8px; color: #a1a1aa; }
+
+        @media (max-width: 768px) {
+            .charts-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div>
+            <h1>Carrier Sales Dashboard</h1>
+            <div class="subtitle">Inbound call analytics and metrics</div>
+        </div>
+        <div class="api-key-bar">
+            <input type="password" id="apiKeyInput" placeholder="Enter API Key" />
+            <button onclick="loadDashboard()">Load</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="label">Total Calls</div>
+                <div class="value" id="kpi-total">—</div>
+            </div>
+            <div class="kpi-card">
+                <div class="label">Booking Rate</div>
+                <div class="value green" id="kpi-booking">—</div>
+            </div>
+            <div class="kpi-card">
+                <div class="label">Avg Negotiation Rounds</div>
+                <div class="value yellow" id="kpi-rounds">—</div>
+            </div>
+            <div class="kpi-card">
+                <div class="label">Avg Agreed Rate</div>
+                <div class="value blue" id="kpi-agreed">—</div>
+            </div>
+            <div class="kpi-card">
+                <div class="label">Avg Discount Given</div>
+                <div class="value yellow" id="kpi-discount">—</div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>Call Outcomes</h3>
+                <canvas id="outcomeChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>Carrier Sentiment</h3>
+                <canvas id="sentimentChart"></canvas>
+            </div>
+            <div class="chart-card" style="grid-column: span 2;">
+                <h3>Calls Over Time</h3>
+                <canvas id="timeChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Call Log Table -->
+        <div class="table-card">
+            <h3>Recent Calls</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Call ID</th>
+                        <th>MC #</th>
+                        <th>Carrier</th>
+                        <th>Route</th>
+                        <th>Load Rate</th>
+                        <th>Agreed Rate</th>
+                        <th>Rounds</th>
+                        <th>Outcome</th>
+                        <th>Sentiment</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="callTableBody">
+                    <tr><td colspan="10" class="empty-state"><h3>No data yet</h3>Enter your API key and click Load</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let outcomeChart, sentimentChart, timeChart;
+
+        const API_BASE = window.location.origin;
+
+        function getApiKey() {
+            return document.getElementById('apiKeyInput').value;
+        }
+
+        async function fetchWithKey(url) {
+            const resp = await fetch(url, {
+                headers: { 'X-API-Key': getApiKey() }
+            });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            return resp.json();
+        }
+
+        async function loadDashboard() {
+            try {
+                const [metrics, calls] = await Promise.all([
+                    fetchWithKey(`${API_BASE}/api/calls/metrics`),
+                    fetchWithKey(`${API_BASE}/api/calls/log?limit=50`),
+                ]);
+                renderKPIs(metrics);
+                renderOutcomeChart(metrics.outcome_breakdown);
+                renderSentimentChart(metrics.sentiment_breakdown);
+                renderTimeChart(metrics.calls_over_time);
+                renderCallTable(calls);
+            } catch (err) {
+                alert('Failed to load dashboard: ' + err.message);
+            }
+        }
+
+        function renderKPIs(m) {
+            document.getElementById('kpi-total').textContent = m.total_calls;
+            document.getElementById('kpi-booking').textContent = m.booking_rate.toFixed(1) + '%';
+            document.getElementById('kpi-rounds').textContent = m.avg_negotiation_rounds.toFixed(1);
+            document.getElementById('kpi-agreed').textContent = m.avg_agreed_rate ? '$' + m.avg_agreed_rate.toLocaleString() : 'N/A';
+            document.getElementById('kpi-discount').textContent = m.avg_discount_pct ? m.avg_discount_pct.toFixed(1) + '%' : 'N/A';
+        }
+
+        function renderOutcomeChart(data) {
+            const labels = Object.keys(data);
+            const values = Object.values(data);
+            const colors = ['#22c55e', '#6366f1', '#f87171', '#eab308', '#a8a29e', '#60a5fa'];
+            if (outcomeChart) outcomeChart.destroy();
+            outcomeChart = new Chart(document.getElementById('outcomeChart'), {
+                type: 'doughnut',
+                data: {
+                    labels,
+                    datasets: [{ data: values, backgroundColor: colors.slice(0, labels.length), borderWidth: 0 }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#a1a1aa', padding: 16 } }
+                    }
+                }
+            });
+        }
+
+        function renderSentimentChart(data) {
+            const labels = Object.keys(data);
+            const values = Object.values(data);
+            const colorMap = { positive: '#22c55e', neutral: '#60a5fa', negative: '#f87171' };
+            const colors = labels.map(l => colorMap[l] || '#a8a29e');
+            if (sentimentChart) sentimentChart.destroy();
+            sentimentChart = new Chart(document.getElementById('sentimentChart'), {
+                type: 'doughnut',
+                data: {
+                    labels,
+                    datasets: [{ data: values, backgroundColor: colors, borderWidth: 0 }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#a1a1aa', padding: 16 } }
+                    }
+                }
+            });
+        }
+
+        function renderTimeChart(data) {
+            const labels = data.map(d => d.date);
+            const values = data.map(d => d.count);
+            if (timeChart) timeChart.destroy();
+            timeChart = new Chart(document.getElementById('timeChart'), {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Calls',
+                        data: values,
+                        backgroundColor: '#6366f1',
+                        borderRadius: 4,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: { ticks: { color: '#71717a' }, grid: { color: '#27272a' } },
+                        y: { ticks: { color: '#71717a', stepSize: 1 }, grid: { color: '#27272a' }, beginAtZero: true }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function renderCallTable(calls) {
+            const tbody = document.getElementById('callTableBody');
+            if (!calls.length) {
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#71717a;padding:40px;">No calls recorded yet</td></tr>';
+                return;
+            }
+            tbody.innerHTML = calls.map(c => `
+                <tr>
+                    <td>${c.call_id}</td>
+                    <td>${c.mc_number || '—'}</td>
+                    <td>${c.carrier_name || '—'}</td>
+                    <td>${c.origin || '—'} → ${c.destination || '—'}</td>
+                    <td>${c.loadboard_rate ? '$' + c.loadboard_rate.toLocaleString() : '—'}</td>
+                    <td>${c.agreed_rate ? '$' + c.agreed_rate.toLocaleString() : '—'}</td>
+                    <td>${c.negotiation_rounds}</td>
+                    <td><span class="badge badge-${c.outcome}">${c.outcome}</span></td>
+                    <td><span class="badge badge-${c.sentiment}">${c.sentiment}</span></td>
+                    <td>${new Date(c.created_at).toLocaleDateString()}</td>
+                </tr>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
