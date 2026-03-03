@@ -92,7 +92,7 @@ class CallLogRequest(BaseModel):
             return v
         if isinstance(v, str):
             v = v.replace("$", "").replace(",", "").strip()
-            if not v:
+            if not v or v.lower() == "null":
                 return None
             return float(v)
         return v

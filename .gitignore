@@ -3,6 +3,7 @@ __pycache__/
 .env
 *.db
 .venv/
+.DS_Store
 data/carrier_sales.db
 *.pdf
 settings.local.json
