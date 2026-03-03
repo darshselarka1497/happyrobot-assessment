@@ -79,11 +79,12 @@ Carriers negotiate **up**; the broker negotiates **down**.
 
 ## Dashboard
 
-Served at `/dashboard` — dark-themed metrics UI with:
+Served at `/dashboard` — clean, light-themed metrics UI with:
 
-- Total calls, booking rate, outcome & sentiment breakdowns
-- Average negotiation rounds and rate discount %
-- Calls over time trend chart and recent call log table
+- KPI cards: total calls, booking rate, avg negotiation rounds, avg agreed rate, avg discount
+- Doughnut charts for call outcome and carrier sentiment breakdowns
+- Calls over time bar chart
+- Recent call log table with outcome and sentiment badges
 
 ## Deployment (Render)
 
