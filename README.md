@@ -1,4 +1,4 @@
-# Carrier Sales API
+# HappyRobot Inbound Agent API
 
 Backend API + metrics dashboard for HappyRobot's inbound carrier sales automation. A voice agent calls these endpoints to verify carriers, search loads, negotiate pricing, and log call data.
 
