@@ -7,5 +7,5 @@ __pycache__/
 data/carrier_sales.db
 *.pdf
 settings.local.json
-docs/IMPLEMENTATION_GUIDE.md
+docs/
 CLAUDE.md
